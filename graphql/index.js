@@ -85,7 +85,11 @@ const resolvers = {
 
   Mutation: {
     addBook: async (root, args, context) => {
-      if (!context.currentUser) throw new GraphQLError('Not authenticated')
+      if (!context.currentUser) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' }
+        })
+      }
 
       let author = await Author.findOne({ name: args.author })
       if (!author) {
@@ -109,7 +113,11 @@ const resolvers = {
     },
 
     editAuthor: async (root, args, context) => {
-      if (!context.currentUser) throw new GraphQLError('Not authenticated')
+      if (!context.currentUser) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: { code: 'UNAUTHENTICATED' }
+        })
+      }
 
       const author = await Author.findOne({ name: args.name })
       if (!author) return null
@@ -162,7 +170,7 @@ startStandaloneServer(server, {
   listen: { port: 4000 },
   context: async ({ req }) => {
     const auth = req?.headers.authorization
-    if (auth && auth.startsWith('Bearer ')) {
+    if (auth && auth.toLowerCase().startsWith('bearer ')) {
       try {
         const decoded = jwt.verify(auth.substring(7), process.env.JWT_SECRET)
         const currentUser = await User.findById(decoded.id)
